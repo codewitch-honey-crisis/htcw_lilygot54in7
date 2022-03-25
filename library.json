@@ -1,0 +1,37 @@
+{
+    "name": "htcw_lilygot54in7",
+    "version": "0.9.0",
+    "description": "Provides support for the Lilygo T5 4.7inch smart device w/ GFX",
+    "keywords": ["epaper","eink","e-paper","e-ink","lilygo","graphics","drawing"],
+    "authors": {
+        "name":"honey the codewitch",
+        "homepage": "https://www.codeproject.com/Members/code-witch"
+    },
+    "license": "MIT",
+    "frameworks": ["arduino"],
+    "platforms": "*",
+    "build": {
+        "unflags": "-std=gnu++11",
+        "flags": "-std=gnu++14"
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/codewitch-honey-crisis/htcw_lilygot54in7.git"
+    },
+    "dependencies": {
+        "codewitch-honey-crisis/htcw_gfx": "^1.0.2"
+    },
+    "examples": [
+        {
+            "name": "Demo",
+            "base": "examples/demo",
+            "files": [
+                "platformio.ini",
+                "include/Maziro.h",
+                "include/image3.h",
+                "src/main.cpp"
+            ]
+        }
+    ]
+}
