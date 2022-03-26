@@ -13,6 +13,9 @@ namespace arduino {
         float voltage() const;
         bool auto_clear() const;
         void auto_clear(bool value);
+        uint8_t rotation() const;
+        void rotation(uint8_t value);
+        void invalidate();
         gfx::size16 dimensions() const;
         gfx::rect16 bounds() const;
         gfx::gfx_result clear(const gfx::rect16& bounds);

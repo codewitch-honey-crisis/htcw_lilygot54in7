@@ -62,11 +62,11 @@
 using namespace gfx;
 
 namespace lilygot54in7_helpers {
-constexpr static const uint16_t width = 960;
-constexpr static const uint16_t height = 540;
+constexpr static const uint16_t native_width = 960;
+constexpr static const uint16_t native_height = 540;
         
-#define EPD_WIDTH (width)
-#define EPD_HEIGHT (height)
+#define EPD_WIDTH (native_width)
+#define EPD_HEIGHT (native_height)
 
 using frame_buffer_type = gfx::bitmap<arduino::lilygot54in7::pixel_type>;
         
@@ -1152,6 +1152,7 @@ static rect16 suspend_bounds = {uint16_t(-1),uint16_t(-1),uint16_t(-1),uint16_t(
 static bool is_initialized = false;
 static bool is_sleep = false;
 static bool is_auto_clear = true;
+static uint8_t rot = 0;
 static void expand_rect(rect16& dst,const rect16& src) {
     if(dst.x1==uint16_t(-1)||src.x1<dst.x1) {
         dst.x1=src.x1;
@@ -1212,6 +1213,56 @@ void update_display() {
     }
     suspend_bounds = {uint16_t(-1),uint16_t(-1),uint16_t(-1),uint16_t(-1)};
 }
+void translate_rotation(point16& location) {
+    if(0==(rot&1)) {
+        uint16_t tmp = location.x;
+        location.x = location.y;
+        location.y = tmp;
+    }
+    switch(rot) {
+        case 0:
+            location.y = EPD_HEIGHT-location.y-1;
+            break;
+        case 2:
+            location.x = EPD_WIDTH-location.x-1;
+            break;
+        case 3:
+            location.x = EPD_WIDTH-location.x-1;
+            location.y = EPD_HEIGHT-location.y-1;
+            break;
+
+    }
+}
+void translate_rotation(rect16& bounds) {
+    if(0==(rot&1)) {
+
+        uint16_t tmp = bounds.x1;
+        bounds.x1 = bounds.y1;
+        bounds.y1 = tmp;
+        tmp = bounds.x2;
+        bounds.x2 = bounds.y2;
+        bounds.y2 = tmp;
+    }
+    switch(rot) {
+        case 0:
+            bounds.y1 = EPD_HEIGHT-bounds.y1-1;
+            bounds.y2 = EPD_HEIGHT-bounds.y2-1;
+            break;
+        case 2:
+            bounds.x1 = EPD_WIDTH-bounds.x1-1;
+            bounds.x2 = EPD_WIDTH-bounds.x2-1;
+            break;
+        case 3:
+            bounds.x1 = EPD_WIDTH-bounds.x1-1;
+            bounds.x2 = EPD_WIDTH-bounds.x2-1;
+            bounds.y1 = EPD_HEIGHT-bounds.y1-1;
+            bounds.y2 = EPD_HEIGHT-bounds.y2-1;
+            break;
+    }
+}
+rect16 native_bounds() {
+    return {0,0,uint16_t(EPD_WIDTH-1),uint16_t(EPD_HEIGHT-1)};
+}
 } // lilygot54in7_helpers
 
 using namespace lilygot54in7_helpers;
@@ -1219,7 +1270,7 @@ using namespace lilygot54in7_helpers;
 namespace arduino {
     gfx_result lilygot54in7::initialize() {
         if(!is_initialized) {
-            const size_t size = frame_buffer_type::sizeof_buffer({width,height});
+            const size_t size = frame_buffer_type::sizeof_buffer({native_width,native_height});
             frame_buffer = (uint8_t*)ps_malloc(size);
             if(frame_buffer==nullptr) {
                 return gfx_result::out_of_memory;
@@ -1229,6 +1280,7 @@ namespace arduino {
             epd_poweron();
             epd_clear();
             is_sleep = false;
+            rot = 0;
             suspend_count = 0;
             suspend_bounds = {uint16_t(-1),uint16_t(-1),uint16_t(-1),uint16_t(-1)};
             esp_adc_cal_characteristics_t adc_chars;
@@ -1258,6 +1310,24 @@ namespace arduino {
             is_sleep = true;
         }
     }
+    void lilygot54in7::invalidate() {
+        if(is_initialized) {
+            suspend_bounds = bounds();
+        }
+    }
+    uint8_t lilygot54in7::rotation() const {
+        return rot;
+    }
+    void lilygot54in7::rotation(uint8_t value) {
+        uint8_t orot = rot;
+        rot= value &3;
+        if(rot!=orot) {
+            switch(rot) {
+                case 0:
+                    break;
+            }
+        }
+    }
     void lilygot54in7::wash() {
         if(!is_initialized || is_sleep) {
             return;
@@ -1265,15 +1335,17 @@ namespace arduino {
         delay(10);
         epd_clear();
         int i;
+        rect16 b = bounds();
+        translate_rotation(b);    
         for (i = 0; i < 20; i++)
         {
-            epd_push_pixels(bounds(), 50, 0);
+            epd_push_pixels(b, 50, 0);
             delay(500);
         }
         epd_clear();
         for (i = 0; i < 40; i++)
         {
-            epd_push_pixels(bounds(), 50, 1);
+            epd_push_pixels(b, 50, 1);
             delay(500);
         }
         epd_clear();
@@ -1299,7 +1371,11 @@ namespace arduino {
         return ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
     }
     size16 lilygot54in7::dimensions() const {
-        return {width,height};
+        if(rot&1) {
+            return {native_width,native_height};
+        } else {
+            return {native_height,native_width};
+        }
     }
     rect16 lilygot54in7::bounds() const {
         return dimensions().bounds();
@@ -1309,8 +1385,13 @@ namespace arduino {
         if(r!=gfx_result::success) {
             return r;
         }
-        const rect16 rr = bounds.crop(this->bounds()).normalize();
-        frame_buffer_type fb({width,height},frame_buffer);
+        rect16 rr =bounds;
+        translate_rotation(rr);
+        if(!native_bounds().intersects(rr)) {
+            return gfx_result::success;
+        }
+        rr = rr.crop(native_bounds()).normalize();
+        frame_buffer_type fb({native_width,native_height},frame_buffer);
         fb.fill(rr,pixel_type(true,1));
         epd_clear_area(rr);
         expand_rect(suspend_bounds,rr);
@@ -1322,11 +1403,13 @@ namespace arduino {
         if(r!=gfx_result::success) {
             return r;
         }
-        if(!this->bounds().intersects(bounds)) {
+        rect16 rr = bounds;
+        translate_rotation(rr);
+        if(!native_bounds().intersects(rr)) {
             return gfx_result::success;
         }
-        const rect16 rr = bounds.crop(this->bounds()).normalize();
-        frame_buffer_type fb({width,height},frame_buffer);
+        rr = rr.crop(native_bounds()).normalize();
+        frame_buffer_type fb({native_width,native_height},frame_buffer);
         fb.fill(rr,color);
         expand_rect(suspend_bounds,rr);
         update_display();
@@ -1337,10 +1420,11 @@ namespace arduino {
         if(r!=gfx_result::success) {
             return r;
         }
-        if(!bounds().intersects(location)) {
+        translate_rotation(location);
+        if(!native_bounds().intersects(location)) {
             return gfx_result::success;
         }
-        frame_buffer_type fb({width,height},frame_buffer);
+        frame_buffer_type fb({native_width,native_height},frame_buffer);
         const rect16 bounds = {location.x,location.y,location.x,location.y};
         fb.point(location,color);
         expand_rect(suspend_bounds,bounds);
@@ -1351,23 +1435,14 @@ namespace arduino {
         if(!is_initialized) {
             return gfx_result::invalid_state;
         }
-        return frame_buffer_type::point(dimensions(),frame_buffer,location,out_color);
+        translate_rotation(location);
+        return frame_buffer_type::point({native_width,native_height},frame_buffer,location,out_color);
     }
     gfx_result lilygot54in7::suspend() {
-        gfx_result r = initialize();
-        if(r!=gfx_result::success) {
-            return r;
-        }
-        
         ++suspend_count;
         return gfx_result::success;
     }
     gfx_result lilygot54in7::resume(bool force) {
-        gfx_result r = initialize();
-        if(r!=gfx_result::success) {
-            return r;
-        }
-        
         --suspend_count;
         if(force || suspend_count<=0) {
             suspend_count = 0;
