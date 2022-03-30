@@ -1439,10 +1439,18 @@ namespace arduino {
         return frame_buffer_type::point({native_width,native_height},frame_buffer,location,out_color);
     }
     gfx_result lilygot54in7::suspend() {
+        gfx_result r = initialize();
+        if(r!=gfx_result::success) {
+            return r;
+        }
         ++suspend_count;
         return gfx_result::success;
     }
     gfx_result lilygot54in7::resume(bool force) {
+        gfx_result r = initialize();
+        if(r!=gfx_result::success) {
+            return r;
+        }
         --suspend_count;
         if(force || suspend_count<=0) {
             suspend_count = 0;
