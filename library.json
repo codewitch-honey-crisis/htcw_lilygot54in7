@@ -1,6 +1,6 @@
 {
     "name": "htcw_lilygot54in7",
-    "version": "0.9.7",
+    "version": "0.9.8",
     "description": "Provides support for the Lilygo T5 4.7inch smart device w/ GFX",
     "keywords": ["epaper","eink","e-paper","e-ink","lilygo","graphics","drawing"],
     "authors": {
@@ -20,7 +20,7 @@
         "url": "https://github.com/codewitch-honey-crisis/htcw_lilygot54in7.git"
     },
     "dependencies": {
-        "codewitch-honey-crisis/htcw_gfx": "^1.1.0"
+        "codewitch-honey-crisis/htcw_gfx": "^1.1.1"
     },
     "examples": [
         {
