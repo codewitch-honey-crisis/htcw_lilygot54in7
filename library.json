@@ -1,6 +1,6 @@
 {
     "name": "htcw_lilygot54in7",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Provides support for the Lilygo T5 4.7inch smart device w/ GFX",
     "keywords": ["epaper","eink","e-paper","e-ink","lilygo","graphics","drawing"],
     "authors": {

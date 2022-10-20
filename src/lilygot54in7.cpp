@@ -1278,7 +1278,6 @@ namespace arduino {
             memset(frame_buffer,0xFF,size);
             epd_init();
             epd_poweron();
-            epd_clear();
             is_sleep = false;
             rot = 0;
             suspend_count = 0;
