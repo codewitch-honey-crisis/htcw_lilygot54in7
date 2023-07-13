@@ -1,7 +1,17 @@
 #pragma once
+#ifndef ESP_PLATFORM
+#error "This library requires a Lilygo T5 4.7 inch"
+#endif
+#if __has_include(<Arduino.h>)
 #include <Arduino.h>
+#endif
+#include <stdint.h>
 #include <gfx_bitmap.hpp>
+#ifdef ARDUINO
 namespace arduino {
+#else
+namespace esp_idf {
+#endif
     struct lilygot54in7 {
         using type = lilygot54in7;
         using pixel_type = gfx::gsc_pixel<4>;

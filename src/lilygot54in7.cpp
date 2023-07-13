@@ -1266,8 +1266,11 @@ rect16 native_bounds() {
 } // lilygot54in7_helpers
 
 using namespace lilygot54in7_helpers;
-
+#ifdef ARDUINO
 namespace arduino {
+#else
+namespace esp_idf {
+#endif
     gfx_result lilygot54in7::initialize() {
         if(!is_initialized) {
             const size_t size = frame_buffer_type::sizeof_buffer({native_width,native_height});
